@@ -1,13 +1,16 @@
 const express = require("express");
-const app = express();
 const cors = require("cors");
+const http = require('http');
 require("./db/conn");
+const socketIO = require('socket.io');
 const authRoutes = require("./Router/AuthRoutes");
 const cookieParser = require("cookie-parser");
 const Profile = require("./Models/ProfileModel");
 const Calender = require("./Models/CalenderModel");
 const student = require("./Models/StudentModel");
 const driver = require("./Models/DriverModel");
+const Location = require("./Models/Location");
+const app = express();
 
 // app.use(cors({
 //     origin: ["http://localhost:3000"] ,
@@ -29,7 +32,9 @@ app.use((req, res, next) => {
 
 app.use(cookieParser());
 app.use(express.json());
-app.use("/", authRoutes);    
+app.use("/", authRoutes); 
+const server = http.createServer(app);
+const io = socketIO(server);  
 
 app.get("/", (req, res) => {
   res.send("hello");
@@ -145,10 +150,40 @@ app.post("/driver", async (req, res) => {
   });
 });
 
+io.on('connection', (socket) => {
+  console.log('A user connected');
+
+  // Listen for location updates
+  socket.on('locationUpdate', (data) => {
+    const { userId, latitude, longitude } = data;
+
+    // Update or create user's location
+    Location.findOneAndUpdate(
+      { userId },
+      { userId, latitude, longitude },
+      { upsert: true },
+      (err) => {
+        if (err) {
+          console.error('Error updating location:', err);
+        } else {
+          console.log('Location updated');
+          // Emit updated location to all connected clients
+          io.emit('locationUpdate', { userId, latitude, longitude });
+        }
+      }
+    );
+  });
+
+  // Handle disconnection
+  socket.on('disconnect', () => {
+    console.log('A user disconnected');
+  });
+});
 
 
 
-app.listen(2000, () => {
-  console.log("Server is running on port 8000");
+const port = 2000;
+server.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
 });
 

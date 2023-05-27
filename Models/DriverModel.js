@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 
 const driverSchema = new mongoose.Schema({
     name: {
-        type: String,
+        type: String, 
     },
     email: {
         type: String,

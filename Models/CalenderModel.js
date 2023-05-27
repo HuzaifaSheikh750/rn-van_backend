@@ -3,12 +3,11 @@ const mongoose = require("mongoose");
 const scheduleSchema = new mongoose.Schema({
     title : {
         type: String,
-        required: true
     },
-    startDate: {
+    start: {
         type: String,
     },
-    endDate : {
+    end : {
         type: String,
     },
     allday : {
